@@ -5,7 +5,7 @@ metadata:
 data:
   load-balancer.conf: |
     <Proxy balancer://mycluster>
-      BalancerMember http://guestbook-guestbook.apps.cluster-8jmth.sandbox380.opentlc.com:80
+      BalancerMember http://guestbook-nasa-app.apps.prod-east1.n2rsc.sandbox1558.opentlc.com:80
     </Proxy>
     ProxyPass        / balancer://mycluster/
     ProxyPassReverse / balancer://mycluster/
