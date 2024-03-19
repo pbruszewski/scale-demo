@@ -1,4 +1,4 @@
-namespace: nasa
+namespace: nasa-app
 
 resources:
 - guestbook.yaml
