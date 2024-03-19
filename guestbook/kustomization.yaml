@@ -1,0 +1,6 @@
+namespace: nasa
+
+resources:
+- guestbook.yaml
+- namespace.yaml
+- redis.yaml

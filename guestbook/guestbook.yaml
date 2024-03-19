@@ -1,0 +1,122 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: guestbook
+  namespace: nasa
+  labels:
+    app: guestbook
+    app.kubernetes.io/component: guestbook
+    app.kubernetes.io/instance: guestbook
+    app.kubernetes.io/name: guestbook
+    app.kubernetes.io/part-of: guestbook
+    app.openshift.io/runtime: golang
+    app.openshift.io/runtime-namespace: nasa
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: guestbook
+  template:
+    metadata:
+      labels:
+        app: guestbook
+        deployment: guestbook
+    spec:
+      containers:
+        - name: guestbook
+          image: registry.k8s.io/guestbook:v3
+          ports:
+            - containerPort: 3000
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 100m
+            requests:
+              cpu: 100m
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: IfNotPresent
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      securityContext: {}
+      schedulerName: default-scheduler
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
+
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: guestbook
+  namespace: nasa
+  labels:
+    app: guestbook
+    app.kubernetes.io/component: guestbook
+    app.kubernetes.io/instance: guestbook
+    app.kubernetes.io/name: guestbook
+    app.kubernetes.io/part-of: redis
+    app.openshift.io/runtime-version: v3
+spec:
+  ports:
+    - name: 3000-tcp
+      protocol: TCP
+      port: 3000
+      targetPort: 3000
+  sessionAffinity: None
+  selector:
+    app: guestbook
+    deployment: guestbook
+
+
+---
+kind: HorizontalPodAutoscaler
+apiVersion: autoscaling/v2
+metadata:
+  name: guestbook
+  namespace: nasa
+spec:
+  scaleTargetRef:
+    kind: Deployment
+    name: guestbook
+    apiVersion: apps/v1
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 50
+
+---
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: guestbook
+  namespace: nasa
+  labels:
+    app: guestbook
+    app.kubernetes.io/component: guestbook
+    app.kubernetes.io/instance: guestbook
+    app.kubernetes.io/name: guestbook
+    app.kubernetes.io/part-of: guestbook
+    app.openshift.io/runtime-version: v3
+spec:
+  to:
+    kind: Service
+    name: guestbook
+    weight: 100
+  port:
+    targetPort: 3000-tcp
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Allow
+  wildcardPolicy: None

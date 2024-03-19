@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: load-balancer-config
+data:
+  load-balancer.conf: |
+    <Proxy balancer://mycluster>
+      BalancerMember http://guestbook-guestbook.apps.cluster-8jmth.sandbox380.opentlc.com:80
+    </Proxy>
+    ProxyPass        / balancer://mycluster/
+    ProxyPassReverse / balancer://mycluster/

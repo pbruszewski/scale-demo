@@ -1,0 +1,161 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: redis-master
+  namespace: nasa
+  labels:
+    app: redis
+    app.kubernetes.io/component: redis-master
+    app.kubernetes.io/instance: redis-master
+    app.kubernetes.io/name: redis-master
+    app.kubernetes.io/part-of: guestbook
+    app.openshift.io/runtime: redis
+    app.openshift.io/runtime-namespace: nasa
+    role: master
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-master
+  template:
+    metadata:
+      labels:
+        app: redis-master
+        deployment: redis-master
+        role: master
+    spec:
+      volumes:
+        - name: redis-master-1
+          emptyDir: {}
+      containers:
+        - name: redis-master
+          image: registry.k8s.io/redis:e2e
+          ports:
+            - containerPort: 6379
+              protocol: TCP
+          resources: {}
+          volumeMounts:
+            - name: redis-master-1
+              mountPath: /data
+          imagePullPolicy: IfNotPresent
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      securityContext: {}
+      schedulerName: default-scheduler
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
+
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: redis-master
+  namespace: nasa
+  labels:
+    app: redis
+    app.kubernetes.io/component: redis-master
+    app.kubernetes.io/instance: redis-master
+    app.kubernetes.io/name: redis-master
+    app.kubernetes.io/part-of: redis
+    app.openshift.io/runtime-version: e2e
+    role: master
+spec:
+  ports:
+    - name: 6379-tcp
+      protocol: TCP
+      port: 6379
+      targetPort: 6379
+  sessionAffinity: None
+  selector:
+    app: redis-master
+    deployment: redis-master
+
+
+---
+
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: redis-slave
+  namespace: nasa
+  labels:
+    app: redis
+    app.kubernetes.io/component: redis-slave
+    app.kubernetes.io/instance: redis-slave
+    app.kubernetes.io/name: redis-slave
+    app.kubernetes.io/part-of: guestbook
+    app.openshift.io/runtime: redis
+    app.openshift.io/runtime-namespace: nasa
+    role: replica
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-slave
+  template:
+    metadata:
+      labels:
+        app: redis-slave
+        deployment: redis-slave
+        role: replica
+    spec:
+      volumes:
+        - name: redis-slave-1
+          emptyDir: {}
+      containers:
+        - name: redis-slave
+          image: registry.k8s.io/redis-slave:v2
+          ports:
+            - containerPort: 6379
+              protocol: TCP
+          resources: {}
+          volumeMounts:
+            - name: redis-slave-1
+              mountPath: /data
+          imagePullPolicy: IfNotPresent
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      securityContext: {}
+      schedulerName: default-scheduler
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: redis-slave
+  namespace: nasa
+  labels:
+    app: redis
+    app.kubernetes.io/component: redis-slave
+    app.kubernetes.io/instance: redis-slave
+    app.kubernetes.io/name: redis-slave
+    app.kubernetes.io/part-of: redis
+    app.openshift.io/runtime-version: v2
+    role: replica
+spec:
+  ports:
+    - name: 6379-tcp
+      protocol: TCP
+      port: 6379
+      targetPort: 6379
+  sessionAffinity: None
+  selector:
+    app: redis-slave
+    deployment: redis-slave
+
+---
